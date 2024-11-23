@@ -22,6 +22,9 @@ class RecordAudioNotifier extends ChangeNotifier {
   StreamSubscription? onStateChangedSubscription;
   StreamSubscription? onAmplitudeChangedSubscription;
 
+  // Change this if you want to display more telemetry lines
+  int maxTelemetryLines = 15;
+
   RecordAudioNotifier() {
     getDevices();
   }
@@ -30,6 +33,16 @@ class RecordAudioNotifier extends ChangeNotifier {
 
   List<double> get intensityRecords => List.unmodifiable(_intensityRecords);
 
+  /// Retrieves the list of available input audio devices and updates the
+  /// `inputDevices` list with devices that have non-empty IDs and labels.
+  ///
+  /// If the user has granted permission to access audio recording, this method
+  /// clears the current list of input devices, fetches the available devices,
+  /// filters out those with empty IDs or labels, and adds the remaining devices
+  /// to the `inputDevices` list. The first device in the updated list is set as
+  /// the `choosenDevice`. Finally, it notifies listeners about the changes.
+  ///
+  /// This method is asynchronous and should be called with `await`.
   void getDevices() async {
     if (await record.hasPermission()) {
       inputDevices.clear();
@@ -45,6 +58,24 @@ class RecordAudioNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Starts recording audio and updates the recording state.
+  ///
+  /// This method checks for recording permissions and starts recording audio
+  /// if permissions are granted. It saves the recording to a file named
+  /// 'recording.wav' in the application's documents directory (or the current
+  /// directory if running on the web). The recording state is updated and
+  /// listeners are notified.
+  ///
+  /// While recording, it listens to amplitude changes and logs the raw
+  /// amplitude in dBFS. The amplitude is normalized to a range between 0 and 1,
+  /// then scaled to a desired height range (e.g., 0 to 200). The scaled height
+  /// is used to update intensity records, which are cleared and reset if the
+  /// scaled height is less than 0 or if the dB level is NaN.
+  ///
+  /// If recording permissions are denied, a log message is generated.
+  ///
+  /// Throws:
+  /// - `Exception` if an error occurs while starting the recording.
   Future<void> startRecording() async {
     var path = 'recording.wav';
     if (!kIsWeb) {
@@ -83,7 +114,7 @@ class RecordAudioNotifier extends ChangeNotifier {
 
             if (scaledHeight < 0 || dbLevel.isNaN) {
               _intensityRecords.clear();
-              _intensityRecords.addAll(List.filled(28, 5));
+              _intensityRecords.addAll(List.filled(10, 5));
             } else {
               addIntensityRecord(scaledHeight);
             }
@@ -97,7 +128,7 @@ class RecordAudioNotifier extends ChangeNotifier {
   }
 
   void addIntensityRecord(double intensity) {
-    if (_intensityRecords.length > 28) {
+    if (_intensityRecords.length > 10) {
       _intensityRecords.removeAt(0);
     }
     _intensityRecords.add(intensity);
@@ -128,6 +159,17 @@ class RecordAudioNotifier extends ChangeNotifier {
     }
   }
 
+  /// Sends the recording by stopping the recording if it is in progress,
+  /// and then saving the recording to a specified path or downloading it.
+  ///
+  /// If the platform is not web, the recording is saved in the application's
+  /// documents directory with the filename 'recording.wav'. The path to the
+  /// saved recording is logged.
+  ///
+  /// If the platform is web, the recording is downloaded.
+  ///
+  /// This method is asynchronous and returns a [Future] that completes when
+  /// the recording has been sent.
   Future<void> sendRecording() async {
     if (isRecording) {
       await stopRecording();
@@ -139,7 +181,7 @@ class RecordAudioNotifier extends ChangeNotifier {
       final path = '${directory.path}/recording.wav';
       log('Recording saved at $path');
     } else {
-      download();
+      downloadFileOnBrowser();
     }
   }
 

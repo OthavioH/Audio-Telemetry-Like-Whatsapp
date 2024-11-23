@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Audio Telemetry Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
@@ -28,20 +28,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-// Column is also a layout widget. It takes a list of children and
-// arranges them vertically. By default, it sizes itself to fit its
-// children horizontally, and tries to be as tall as its parent.
-//
-// Column has various properties to control how it sizes itself and
-// how it positions its children. Here we use mainAxisAlignment to
-// center the children vertically; the main axis here is the vertical
-// axis because Columns are vertical (the cross axis would be
-// horizontal).
-//
-// TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-// action in the IDE, or press "p" in the console), to see the
-// wireframe for each widget.
 
 class MyHomePage extends ConsumerStatefulWidget {
   const MyHomePage({super.key});
@@ -56,27 +42,44 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Flutter Demo Home Page'),
+        title: const Text('Audio Telemetry'),
       ),
-      body: Center(
-        child: Builder(builder: (context) {
-          var isRecording = ref.watch(recordAudioProvider).isRecording;
-          var listOfIntensities = ref.watch(recordAudioProvider).intensityRecords;
-          return Column(
+      body: Builder(builder: (context) {
+        var isRecording = ref.watch(recordAudioProvider).isRecording;
+        var listOfIntensities = ref.watch(recordAudioProvider).intensityRecords;
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<InputDevice>(
                 value: ref.watch(recordAudioProvider).choosenDevice,
+                isExpanded: true,
                 items: ref
                     .watch(recordAudioProvider)
                     .inputDevices
                     .map((e) => DropdownMenuItem(
                           value: e,
-                          child: Text(e.label),
+                          child: Text(
+                            e.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ))
                     .toList(),
+                selectedItemBuilder: (context) {
+                  return ref
+                      .watch(recordAudioProvider)
+                      .inputDevices
+                      .map((e) => Text(
+                            e.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ))
+                      .toList();
+                },
                 onChanged: (value) {
                   if (value != null) {
                     ref.read(recordAudioProvider).changeDevice(value);
@@ -87,7 +90,8 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                 height: 20,
               ),
               isRecording
-                  ? Flexible(
+                  ? SizedBox(
+                      height: 210,
                       child: ListView.builder(
                         itemCount: listOfIntensities.length,
                         shrinkWrap: true,
@@ -123,9 +127,9 @@ class _MyHomePageState extends ConsumerState<MyHomePage> {
                 onStartRecording: ref.read(recordAudioProvider).startRecording,
               ),
             ],
-          );
-        }),
-      ),
+          ),
+        );
+      }),
     );
   }
 }
@@ -147,12 +151,9 @@ class SendMessageWidget extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
         height: 60,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: Container(
-                color: Colors.grey,
-              ),
-            ),
             Visibility(
               visible: isRecording,
               child: IconButton(
@@ -179,11 +180,18 @@ class SendMessageWidget extends StatelessWidget {
             ),
             Visibility(
               visible: !isRecording,
-              child: IconButton(
-                icon: const Icon(Icons.mic),
-                onPressed: () {
+              child: InkWell(
+                onTap: () {
                   onStartRecording();
                 },
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.green,
+                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: const Icon(Icons.mic),
+                ),
               ),
             ),
           ],
