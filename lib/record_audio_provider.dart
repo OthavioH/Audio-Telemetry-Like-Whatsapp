@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:audio_like_whatsapp/html.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -69,7 +71,7 @@ class RecordAudioNotifier extends ChangeNotifier {
             double dbLevel = amplitude.current; // Use the amplitude value directly
 
             // Debug logging
-            print('Raw amplitude (dBFS): $dbLevel');
+            log('Raw amplitude (dBFS): $dbLevel');
 
             // Normalize dBFS to a range between 0 and 1
             double normalizedValue = (dbLevel + 100) / 100; // Assuming -100 dBFS is the minimum
@@ -77,7 +79,7 @@ class RecordAudioNotifier extends ChangeNotifier {
             // Scale normalized value to desired height range (e.g., 0 to 200)
             double scaledHeight = normalizedValue * 200;
 
-            print('Scaled height: $scaledHeight');
+            log('Scaled height: $scaledHeight');
 
             if (scaledHeight < 0 || dbLevel.isNaN) {
               _intensityRecords.clear();
@@ -90,7 +92,7 @@ class RecordAudioNotifier extends ChangeNotifier {
         }
       });
     } else {
-      print('Permission denied');
+      log('Permission denied');
     }
   }
 
@@ -135,7 +137,7 @@ class RecordAudioNotifier extends ChangeNotifier {
     if (!kIsWeb) {
       final directory = await getApplicationDocumentsDirectory();
       final path = '${directory.path}/recording.wav';
-      print('Recording saved at $path');
+      log('Recording saved at $path');
     } else {
       download();
     }
