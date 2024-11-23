@@ -144,7 +144,7 @@ class SendMessageWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => SizedBox(
         height: 60,
         child: Row(
           children: [
